@@ -1,71 +1,40 @@
 const { SlashCommandBuilder } = require("discord.js");
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const agentsList = require('../data/agents.js');
 
-let agentsList = [
-    'Brimstone', 'Phoenix', 'Sage', 'Sova', 'Viper', 
-    'Cypher', 'Reyna', 'Killjoy', 'Breach', 'Omen', 
-    'Jett', 'Raze', 'Skye', 'Yoru', 'Astra', 
-    'KAY/O', 'Chamber', 'Neon', 'Fade', 'Harbor', 
-    'Gekko', 'Deadlock','Iso', 'Clove', 'Vyse'
-];
+const roleColors = {
+    'Duelista 💥': 0xFF5733,
+    'Controlador 🌫️': 0x33FF57,
+    'Centinela 🛡️': 0x3357FF,
+    'Iniciador 🎯': 0xFF33A1,
+};
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('agente')
-        .setDescription('Selección aleatoria de un agente.')
-        .addSubcommand(subcommand => 
-            subcommand
-                .setName('random')
-                .setDescription('Selecciona un agente aleatorio.'))
-        .addSubcommand(subcommand => 
-            subcommand
-                .setName('reset')
-                .setDescription('Reinicia la lista de agentes.')),
+        .setDescription('Selección aleatoria de un agente.'),
+
     async execute(interaction) {
         console.log('Ejecutando comando /agent...');
-        const subcommand = interaction.options.getSubcommand();
 
-        if (subcommand === 'reset') {
-            agentsList = [
-                'Brimstone', 'Phoenix', 'Sage', 'Sova', 'Viper', 
-                'Cypher', 'Reyna', 'Killjoy', 'Breach', 'Omen', 
-                'Jett', 'Raze', 'Skye', 'Yoru', 'Astra', 
-                'KAY/O', 'Chamber', 'Neon', 'Fade', 'Harbor', 
-                'Gekko', 'Deadlock','Iso', 'Clove', 'Vyse'
-            ];
-            return interaction.reply('🔄️ ¡La lista de agentes se ha reiniciado! 🔄️');
-        }
+            // Seleccionar un agente aleatorio
+            const electedAgent = agentsList[Math.floor(Math.random() * agentsList.length)];
 
-        if (subcommand === 'random') {
-            if (agentsList.length === 0) {
-                return interaction.reply('⚠️¡No hay más agentes disponibles!⚠️ Usa "/agente reset" para reiniciar.');
-            }
-    
-            const elected = agentsList[Math.floor(Math.random() * agentsList.length)];
-            agentsList = agentsList.filter(agent => agent !== elected);
+            // Elegir un GIF aleatorio del agente
+            const randomGif = electedAgent.gif[Math.floor(Math.random() * electedAgent.gif.length)];
 
-            // Obtener gif del agente elegido desde Giphy
-           try {
-            // Solicitar un GIF a Giphy
-            const giphyApiKey = process.env.GIPHY_API_KEY;
-            const giphyResponse = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${giphyApiKey}&q=${elected}-valorant-agent&limit=1&rating=g`);
-
-            const gifData = await giphyResponse.json();
-            const gifUrl = gifData.data && gifData.data[0] ? gifData.data[0].images.original.url : null;
-
-            if (gifUrl) {
-                return interaction.reply({
-                    content: `🎉 Te toca usar **${elected}** 🎉`,
-                    embeds: [{ image: { url: gifUrl } }]
-                });
-            } else {
-                return interaction.reply(`🎉 Te toca usar **${elected}** 🎉`);
-            }
-           } catch (error) {
-                console.error('Error al obtener GIF de Giphy:', error);
-                return interaction.reply('Ha ocurrido un error al seleccionar un agente.');
-           }
-
-        }
+            return interaction.reply({
+                // content: `🎉  El agente seleccionado es **${electedAgent.name}**\n` + 
+                // `💬  *${electedAgent.phrases}*\n` + 
+                // `Rol: ${electedAgent.role}`,
+                embeds: [
+                    {
+                        title: `🎭  **${electedAgent.name}** - ${electedAgent.role}`,
+                        description: `💬  *${electedAgent.phrases}*`,
+                        color: roleColors[electedAgent.role] || 0xFFFFFF,
+                        image: { url: randomGif },
+                        footer: { text: 'A ver si pegas un tiro, burro.' }
+                    }
+                ]
+            });
     },
 };
